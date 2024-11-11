@@ -1,6 +1,7 @@
 #include <Arduino.h>
+#include <QTRSensors.h>
 
-int sensors[] = {A0, A1, A2, A3, A4, A5, A6, A7}; // Sensor pins
+int sensors[] = {1, 2, 3, 4, 5, 6, 7, 8};   // Sensor pins
 int weights[] = {4, 3, 2, 1, -1, -2, -3, -4};    // Vekt for hver sensor
 int motor_R_F = 9;  // Motor_Right_Forward
 int motor_L_F = 10; // Motor_Left_Forward
