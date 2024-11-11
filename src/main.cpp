@@ -1,28 +1,40 @@
 #include <Arduino.h>
 #include <QTRSensors.h>
 
-int sensors[] = {1, 2, 3, 4, 5, 6, 7, 8};   // Sensor pins
-int weights[] = {4, 3, 2, 1, -1, -2, -3, -4};    // Vekt for hver sensor
+QTRSensors qtr;  // Opprett QTR-sensorobjekt
+uint8_t sensor_pins[] = {1, 2, 3, 4, 5, 6, 7, 8}; // Sensor pins
+int weights[] = {4, 3, 2, 1, -1, -2, -3, -4}; // Vekt for hver sensor
 int motor_R_F = 9;  // Motor_Right_Forward
 int motor_L_F = 10; // Motor_Left_Forward
 
-void setup() {
-    for (int i = 0; i < 8; i++) {
-        pinMode(sensors[i], INPUT);
-    }
-    pinMode(motor_R_F, OUTPUT);
-    pinMode(motor_L_F, OUTPUT);
-}
-
+uint16_t sensor_values[8]; // Array for sensorverdier, må være uint16_t
 int sensorweight = 0;
 int minimum = 500;
+
+void setup() {
+    // Initialiser QTR-sensorene
+    qtr.setTypeAnalog();
+    qtr.setSensorPins(sensor_pins, 8); // Sett opp sensorene
+
+    pinMode(motor_R_F, OUTPUT);
+    pinMode(motor_L_F, OUTPUT);
+
+    // Kalibrer sensorene
+    for (int i = 0; i < 250; i++) {
+        qtr.calibrate();
+        delay(20);
+    }
+}
 
 void loop() {
     sensorweight = 0; // Nullstill vekten før ny lesing
 
-    // Les sensorene og beregn vekten
+    // Les kalibrerte sensorverdier
+    qtr.readCalibrated(sensor_values);
+
+    // Beregn vekten basert på aktive sensorer
     for (int i = 0; i < 8; i++) {
-        if (analogRead(sensors[i]) > minimum) {
+        if (sensor_values[i] > minimum) {
             sensorweight += weights[i];
         }
     }
@@ -30,7 +42,7 @@ void loop() {
     // Nullstill sensorvekten hvis ingen sensorer er aktive
     bool noSensorActive = true;
     for (int i = 0; i < 8; i++) {
-        if (analogRead(sensors[i]) > minimum) {
+        if (sensor_values[i] > minimum) {
             noSensorActive = false;
             break;
         }
@@ -39,7 +51,7 @@ void loop() {
         sensorweight = 100;
     }
 
-    // Bruk switch for motorstyring basert på sensorvekten
+    // Motorstyring basert på sensorvekt
     switch (sensorweight) {
         case 100: // Ingen sensorer aktive
             digitalWrite(motor_R_F, LOW);
